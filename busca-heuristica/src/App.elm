@@ -1,21 +1,18 @@
 module App exposing (..)
 
-import Html exposing (Html, text, div, img)
-import Html.Attributes exposing (src)
+import Html exposing (Html, text, div)
 
 
 ---- MODEL ----
 
 
 type alias Model =
-    { message : String
-    , logo : String
-    }
+    {}
 
 
-init : String -> ( Model, Cmd Msg )
-init path =
-    ( { message = "Your Elm App is working!", logo = path }, Cmd.none )
+init : ( Model, Cmd Msg )
+init =
+    ( {}, Cmd.none )
 
 
 
@@ -38,18 +35,16 @@ update msg model =
 view : Model -> Html Msg
 view model =
     div []
-        [ img [ src model.logo ] []
-        , div [] [ text model.message ]
-        ]
+        [ text "init" ]
 
 
 
 ---- PROGRAM ----
 
 
-main : Program String Model Msg
+main : Program Never Model Msg
 main =
-    Html.programWithFlags
+    Html.program
         { view = view
         , init = init
         , update = update
