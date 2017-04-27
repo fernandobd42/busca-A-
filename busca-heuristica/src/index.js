@@ -5,6 +5,6 @@ const root = document.getElementById("root")
 const app = Elm.App.embed(root)
 
 app.ports.sendFile.subscribe(function() {
-  var result = "aaaaaaaaaaa"
+  const result = "aaaaaaaaaaa"
   app.ports.fileSended.send(result)
 })
