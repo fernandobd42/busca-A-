@@ -1,7 +1,10 @@
-require('./main.css')
-var logoPath = require('./logo.svg')
-var Elm = require('./App.elm')
+import "./main.css"
+import Elm from "./App.elm"
 
-var root = document.getElementById('root')
+const root = document.getElementById("root")
+const app = Elm.App.embed(root)
 
-Elm.App.embed(root, logoPath)
+app.ports.sendFile.subscribe(function() {
+  var result = "aaaaaaaaaaa"
+  app.ports.fileSended.send(result)
+})

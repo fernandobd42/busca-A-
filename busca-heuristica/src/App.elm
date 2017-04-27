@@ -1,57 +1,75 @@
-module App exposing (..)
+port module App exposing (..)
 
-import Html exposing (Html, text, div, img)
-import Html.Attributes exposing (src)
+import Html exposing (..)
+import Html.Events exposing (..)
 
 
----- MODEL ----
+main =
+    Html.program
+        { init = init
+        , view = view
+        , update = update
+        , subscriptions = subscriptions
+        }
+
+
+
+-- MODEL
 
 
 type alias Model =
-    { message : String
-    , logo : String
-    }
+    {}
 
 
-init : String -> ( Model, Cmd Msg )
-init path =
-    ( { message = "Your Elm App is working!", logo = path }, Cmd.none )
+init : ( Model, Cmd Msg )
+init =
+    ( Model, Cmd.none )
 
 
 
----- UPDATE ----
+-- UPDATE
 
 
 type Msg
-    = NoOp
+    = SendFile
+    | FileSended String
+
+
+port sendFile : String -> Cmd msg
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-    ( model, Cmd.none )
+    case msg of
+        SendFile ->
+            Debug.log "file" ( model, sendFile "" )
+
+        FileSended fileContent ->
+            let
+                _ =
+                    Debug.log "file sendend" fileContent
+            in
+                ( model, Cmd.none )
 
 
 
----- VIEW ----
+-- SUBSCRIPTIONS
+
+
+port fileSended : (String -> msg) -> Sub msg
+
+
+subscriptions : Model -> Sub Msg
+subscriptions model =
+    fileSended FileSended
+
+
+
+-- VIEW
 
 
 view : Model -> Html Msg
 view model =
     div []
-        [ img [ src model.logo ] []
-        , div [] [ text model.message ]
+        [ button [ onClick SendFile ] [ text "Enviar" ]
         ]
-
-
-
----- PROGRAM ----
-
-
-main : Program String Model Msg
-main =
-    Html.programWithFlags
-        { view = view
-        , init = init
-        , update = update
-        , subscriptions = \_ -> Sub.none
-        }
