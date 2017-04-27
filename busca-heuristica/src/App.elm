@@ -2,6 +2,7 @@ port module App exposing (..)
 
 import Html exposing (..)
 import Html.Events exposing (..)
+import Html.Attributes exposing (..)
 
 
 main =
@@ -35,14 +36,18 @@ type Msg
     | FileSended String
 
 
-port sendFile : String -> Cmd msg
+port sendFile : () -> Cmd msg
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         SendFile ->
-            Debug.log "file" ( model, sendFile "" )
+            let
+                _ =
+                    Debug.log "file sendend" ""
+            in
+                ( model, sendFile () )
 
         FileSended fileContent ->
             let
@@ -71,5 +76,6 @@ subscriptions model =
 view : Model -> Html Msg
 view model =
     div []
-        [ button [ onClick SendFile ] [ text "Enviar" ]
+        [ input [ type_ "file", id "idFilePath" ] []
+        , button [ onClick SendFile ] [ text "Enviar" ]
         ]
