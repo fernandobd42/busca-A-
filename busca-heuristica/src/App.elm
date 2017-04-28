@@ -1,8 +1,9 @@
 port module App exposing (..)
 
 import Html exposing (..)
-import Html.Events exposing (..)
-import Html.Attributes exposing (..)
+import Html.Events exposing (onClick)
+import Html.Attributes exposing (id, type_)
+import Parser exposing (TileMap, createMap, drawMap)
 
 
 main =
@@ -19,12 +20,12 @@ main =
 
 
 type alias Model =
-    {}
+    { tileMap : Maybe TileMap }
 
 
 init : ( Model, Cmd Msg )
 init =
-    ( {}, Cmd.none )
+    ( { tileMap = Nothing }, Cmd.none )
 
 
 
@@ -43,18 +44,10 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         SendFile ->
-            let
-                _ =
-                    Debug.log "file sendend" ""
-            in
-                ( model, sendFile () )
+            ( model, sendFile () )
 
         FileSended fileContent ->
-            let
-                _ =
-                    Debug.log "file sendend" fileContent
-            in
-                ( model, Cmd.none )
+            ( { model | tileMap = Just <| createMap fileContent }, Cmd.none )
 
 
 
@@ -78,4 +71,15 @@ view model =
     div []
         [ input [ type_ "file", id "idFilePath" ] []
         , button [ onClick SendFile ] [ text "Enviar" ]
+        , drawComponent model.tileMap
         ]
+
+
+drawComponent : Maybe TileMap -> Html msg
+drawComponent map =
+    case map of
+        Just m ->
+            drawMap m
+
+        Nothing ->
+            div [] [ text "Envie o arquivo" ]
