@@ -4,10 +4,12 @@ import Html exposing (..)
 import Html.Events exposing (onClick)
 import Html.Attributes exposing (id, type_)
 import Parser exposing (TileMap, createMap, drawMap)
+import Sprites exposing (Sprites)
 
 
+main : Program Sprites Model Msg
 main =
-    Html.program
+    Html.programWithFlags
         { init = init
         , view = view
         , update = update
@@ -20,12 +22,24 @@ main =
 
 
 type alias Model =
-    { tileMap : Maybe TileMap }
+    { tileMap : Maybe TileMap
+    , sprites : Sprites
+    }
 
 
-init : ( Model, Cmd Msg )
-init =
-    ( { tileMap = Nothing }, Cmd.none )
+init : Sprites -> ( Model, Cmd Msg )
+init { groundImg, wallImg, mouseImg, cheeseImg, doorImg } =
+    ( { tileMap = Nothing
+      , sprites =
+            { wallImg = wallImg
+            , groundImg = groundImg
+            , mouseImg = mouseImg
+            , cheeseImg = cheeseImg
+            , doorImg = doorImg
+            }
+      }
+    , Cmd.none
+    )
 
 
 
@@ -71,15 +85,16 @@ view model =
     div []
         [ input [ type_ "file", id "idFilePath" ] []
         , button [ onClick SendFile ] [ text "Enviar" ]
-        , drawComponent model.tileMap
+        , h1 [] [ text "Labirinto" ]
+        , drawComponent model.sprites model.tileMap
         ]
 
 
-drawComponent : Maybe TileMap -> Html msg
-drawComponent map =
-    case map of
+drawComponent : Sprites -> Maybe TileMap -> Html msg
+drawComponent sprites tileMap =
+    case tileMap of
         Just m ->
-            drawMap m
+            drawMap sprites m
 
         Nothing ->
             div [] [ text "Envie o arquivo" ]

@@ -2,7 +2,8 @@ module Parser exposing (..)
 
 import Dict exposing (Dict)
 import Html exposing (..)
-import Html.Attributes exposing (style)
+import Html.Attributes exposing (style, src)
+import Sprites exposing (Sprites)
 
 
 type alias TileMap =
@@ -14,10 +15,10 @@ type alias Position =
 
 
 type Tile
-    = Cheese
-    | Wall
+    = Wall
     | Ground
     | Mouse
+    | Cheese
     | Exit
 
 
@@ -61,34 +62,44 @@ toTile tileChar =
             Wall
 
 
-drawMap : TileMap -> Html msg
-drawMap map =
+drawMap : Sprites -> TileMap -> Html msg
+drawMap sprites map =
     div
         [ style
-            [ ( "display", "grid" ) ]
+            [ ( "display", "grid" )
+            , ( "align", "center" )
+            , ( "width", "  10vmin" )
+            , ( "height", "10vmin" )
+            , ( "position", "absolute" )
+            , ( "top", "150px" )
+            , ( "right", "200" )
+            , ( "bottom", "" )
+            , ( "left", "0" )
+            , ( "margin", "auto" )
+            ]
         ]
-        (List.map (\( position, tile ) -> drawTile position tile) (Dict.toList map))
+        (List.map (\( position, tile ) -> drawTile sprites position tile) (Dict.toList map))
 
 
-drawTile : Position -> Tile -> Html msg
-drawTile ( x, y ) tile =
+drawTile : Sprites -> Position -> Tile -> Html msg
+drawTile sprites ( x, y ) tile =
     let
-        content =
+        sprite =
             case tile of
                 Wall ->
-                    "wall"
-
-                Cheese ->
-                    "cheese"
+                    sprites.wallImg
 
                 Ground ->
-                    "ground"
+                    sprites.groundImg
 
                 Mouse ->
-                    "mouse"
+                    sprites.mouseImg
+
+                Cheese ->
+                    sprites.cheeseImg
 
                 Exit ->
-                    "exit"
+                    sprites.doorImg
     in
         div
             [ style
@@ -96,6 +107,10 @@ drawTile ( x, y ) tile =
                 , ( "grid-column-end", toString <| x + 1 )
                 , ( "grid-row-start", toString y )
                 , ( "grid-row-end", toString <| y + 1 )
+                , ( "background", "url(\"" ++ sprite ++ "\")" )
+                , ( "background-size", "cover" )
+                , ( "width", "50px" )
+                , ( "height", "50px" )
                 ]
             ]
-            [ text content ]
+            []
