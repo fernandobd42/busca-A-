@@ -2,7 +2,7 @@ port module App exposing (..)
 
 import Html exposing (..)
 import Html.Events exposing (onClick)
-import Html.Attributes exposing (id, type_)
+import Html.Attributes exposing (class, id, type_)
 import Parser exposing (TileMap, createMap, drawMap)
 import Sprites exposing (Sprites)
 
@@ -83,10 +83,28 @@ subscriptions model =
 view : Model -> Html Msg
 view model =
     div []
-        [ input [ type_ "file", id "idFilePath" ] []
-        , button [ onClick SendFile ] [ text "Enviar" ]
-        , h1 [] [ text "Labirinto" ]
-        , drawComponent model.sprites model.tileMap
+        [ node "style"
+            []
+            [ text """
+
+            body {
+                background:rgba(0, 0, 0, 0.2);
+            }
+
+            .wrapper {
+                padding: 10px;
+                background: #293c4b;
+                color: white;
+                border-radius: 100px;
+                }
+         """ ]
+        , div
+            []
+            [ input [ type_ "file", id "idFilePath", class "wrapper" ] []
+            , button [ onClick SendFile, class "wrapper" ] [ text "Enviar" ]
+            , h1 [] [ text "Labirinto" ]
+            , drawComponent model.sprites model.tileMap
+            ]
         ]
 
 

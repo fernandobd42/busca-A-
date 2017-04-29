@@ -67,14 +67,9 @@ drawMap sprites map =
     div
         [ style
             [ ( "display", "grid" )
-            , ( "align", "center" )
             , ( "width", "  10vmin" )
             , ( "height", "10vmin" )
             , ( "position", "absolute" )
-            , ( "top", "150px" )
-            , ( "right", "200" )
-            , ( "bottom", "" )
-            , ( "left", "0" )
             , ( "margin", "auto" )
             ]
         ]
