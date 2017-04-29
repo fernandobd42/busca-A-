@@ -1,14 +1,14 @@
 port module App exposing (..)
 
+import Array
+import Dict exposing (Dict)
+import Time
 import Html exposing (..)
 import Html.Events exposing (onClick)
-import Html.Attributes exposing (class, id, type_, style)
+import Html.Attributes exposing (class, id, type_)
 import Parser exposing (TileMap, createMap, Position, Tile(..))
 import Sprites exposing (Sprites)
 import Search
-import Dict
-import Array
-import Time exposing (every, second)
 
 
 main : Program Sprites Model Msg
@@ -102,7 +102,7 @@ port fileSended : (String -> msg) -> Sub msg
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    Sub.batch [ fileSended FileSended, every second Walk ]
+    Sub.batch [ fileSended FileSended, Time.every Time.second Walk ]
 
 
 
@@ -113,20 +113,19 @@ view : Model -> Html Msg
 view model =
     let
         content =
-            (case model.tileMap of
+            case model.tileMap of
                 Just tileMap ->
                     case model.path of
                         Just mousePath ->
                             drawTileMap model.sprites mousePath tileMap model.index
 
                         Nothing ->
-                            [ h1 [] [ text "Existe alguma inconsistência com este labirinto" ] ]
+                            [ h1 [] [ text "Problema impossível" ] ]
 
                 Nothing ->
                     [ input [ type_ "file", id "idFilePath", class "wrapper" ] []
                     , button [ onClick SendFile, class "wrapper" ] [ text "Enviar" ]
                     ]
-            )
     in
         div []
             [ node "style"
@@ -153,21 +152,58 @@ view model =
 drawTileMap : Sprites -> Path -> TileMap -> Int -> List (Html msg)
 drawTileMap sprites path tileMap index =
     let
-        newTileMap =
-            Dict.update
-                (Array.fromList path
-                    |> Array.get index
-                    |> Maybe.withDefault ( 0, 0 )
-                )
-                (\_ -> Just Mouse)
-                tileMap
+        mousePosition =
+            ( Array.fromList path |> Array.get index, Mouse )
 
-        newTile =
-            Dict.update
-                (Maybe.withDefault ( 0, 0 ) (Search.getInitialPosition tileMap))
-                (\_ -> Just Ground)
-                newTileMap
+        initialPosition =
+            ( Search.getInitialPosition tileMap, Ground )
+
+        cheeses =
+            List.map (\( pos, tile ) -> ( pos, Ground )) (getEatenCheese tileMap path index)
+
+        removeInvalidTransforms : List ( Maybe Position, Tile ) -> List ( Position, Tile )
+        removeInvalidTransforms transforms =
+            (List.map
+                (\( pos, tile ) -> ( Maybe.withDefault ( -1, -1 ) pos, tile ))
+                transforms
+            )
+                |> List.filter (\( pos, _ ) -> pos /= ( -1, -1 ))
+
+        newTileMap =
+            updateMap tileMap <| List.append (removeInvalidTransforms [ mousePosition, initialPosition ]) cheeses
     in
         [ h1 [] [ text "Labirinto" ]
-        , Parser.drawMap sprites newTile
+        , Parser.drawMap sprites newTileMap
+        , div [] [ text <| "Número de queijos comidos: " ++ (toString <| List.length cheeses) ]
+        , div [] [ text <| "Número de passos: " ++ (toString index) ]
+        , ul []
+            (List.indexedMap
+                (\stepNumber position ->
+                    li [] [ text <| (toString <| stepNumber + 1) ++ " - " ++ (toString position) ]
+                )
+             <|
+                List.take index path
+            )
         ]
+
+
+updateMap : TileMap -> List ( Position, Tile ) -> TileMap
+updateMap tileMap transforms =
+    List.foldr
+        (\( position, newTile ) currentTileMap ->
+            Dict.update position (\_ -> Just newTile) currentTileMap
+        )
+        tileMap
+        transforms
+
+
+getEatenCheese : TileMap -> Path -> Int -> List ( Position, Tile )
+getEatenCheese tileMap path index =
+    (Dict.intersect
+        (Dict.fromList <|
+            List.map (\pos -> ( pos, Cheese ))
+                (List.take index path)
+        )
+        (Search.getTilesPosition tileMap Cheese)
+    )
+        |> Dict.toList
