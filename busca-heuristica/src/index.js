@@ -1,7 +1,7 @@
 import "./main.css"
 import Elm from "./App.elm"
-import wallImg from './img/wall.jpg'
-import groundImg from './img/ground.jpg'
+import wallImg from './img/wall.png'
+import groundImg from './img/ground.png'
 import mouseImg from './img/mouse.png'
 import cheeseImg from './img/cheese.png'
 import doorImg from './img/door.png'
