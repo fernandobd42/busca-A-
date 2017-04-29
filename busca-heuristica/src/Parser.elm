@@ -22,11 +22,11 @@ type Tile
     | Exit
 
 
-createMap : String -> Dict Position Tile
+createMap : String -> TileMap
 createMap content =
     let
         rows =
-            String.lines content
+            String.lines content |> List.tail |> Maybe.withDefault []
 
         tilesChar =
             List.map (\row -> String.toList row) rows
