@@ -5,7 +5,7 @@ import Dict exposing (Dict)
 import Time
 import Html exposing (..)
 import Html.Events exposing (onClick)
-import Html.Attributes exposing (class, id, type_)
+import Html.Attributes exposing (class, id, type_, style)
 import Parser exposing (TileMap, createMap, Position, Tile(..))
 import Sprites exposing (Sprites)
 import Search
@@ -173,25 +173,29 @@ drawTileMap sprites path tileMap index =
             )
                 |> List.filter (\( pos, _ ) -> pos /= ( -1, -1 ))
 
-        newTileMapGround =
-            updateMap tileMap <| List.append (removeInvalidTransforms [ mousePosition, initialPosition ]) ground
-
-        newTileMapCheese =
-            updateMap newTileMapGround <| List.append (removeInvalidTransforms [ mousePosition, initialPosition ]) cheeses
+        newTileMap =
+            updateMap tileMap <| List.append (removeInvalidTransforms [ mousePosition, initialPosition ]) (List.append ground cheeses)
     in
-        [ h1 [] [ text "Labirinto" ]
-        , Parser.drawMap sprites newTileMapGround
-        , Parser.drawMap sprites newTileMapCheese
-        , div [] [ text <| "Número de queijos comidos: " ++ (toString <| List.length cheeses) ]
-        , div [] [ text <| "Número de passos: " ++ (toString index) ]
-        , ul []
-            (List.indexedMap
-                (\stepNumber position ->
-                    li [] [ text <| (toString <| stepNumber + 1) ++ " - " ++ (toString position) ]
+        [ div
+            [ style [ ( "width", "80%" ), ( "height", "100vh" ), ( "overflow", "auto" ), ( "position", "absolute" ) ] ]
+            [ h1
+                []
+                [ text "Labirinto" ]
+            , Parser.drawMap sprites newTileMap
+            ]
+        , div
+            [ style [ ( "width", "20%" ), ( "margin-left", "80%" ), ( "height", "100vh" ), ( "overflow", "auto" ), ( "position", "absolute" ) ] ]
+            [ div [] [ text <| "Número de queijos comidos: " ++ (toString <| List.length cheeses) ]
+            , div [] [ text <| "Número de passos: " ++ (toString index) ]
+            , ul []
+                (List.indexedMap
+                    (\stepNumber position ->
+                        li [] [ text <| (toString <| stepNumber + 1) ++ " - " ++ (toString position) ]
+                    )
+                 <|
+                    List.take index path
                 )
-             <|
-                List.take index path
-            )
+            ]
         ]
 
 
