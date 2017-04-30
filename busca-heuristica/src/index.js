@@ -5,9 +5,10 @@ import groundImg from './img/ground.png'
 import mouseImg from './img/mouse.png'
 import cheeseImg from './img/cheese.png'
 import doorImg from './img/door.png'
+import walkedGround from './img/walkedGround.png'
 
 const root = document.getElementById("root")
-const app = Elm.App.embed(root, {wallImg, groundImg, mouseImg, cheeseImg, doorImg})
+const app = Elm.App.embed(root, {wallImg, groundImg, mouseImg, cheeseImg, doorImg, walkedGround})
 
 app.ports.sendFile.subscribe( function() {
     const reader = new FileReader()

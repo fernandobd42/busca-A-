@@ -38,7 +38,7 @@ type alias Path =
 
 
 init : Sprites -> ( Model, Cmd Msg )
-init { groundImg, wallImg, mouseImg, cheeseImg, doorImg } =
+init { groundImg, wallImg, mouseImg, cheeseImg, doorImg, walkedGround } =
     ( { tileMap = Nothing
       , path = Nothing
       , index = 0
@@ -48,6 +48,7 @@ init { groundImg, wallImg, mouseImg, cheeseImg, doorImg } =
             , mouseImg = mouseImg
             , cheeseImg = cheeseImg
             , doorImg = doorImg
+            , walkedGround = walkedGround
             }
       }
     , Cmd.none
@@ -156,10 +157,13 @@ drawTileMap sprites path tileMap index =
             ( Array.fromList path |> Array.get index, Mouse )
 
         initialPosition =
-            ( Search.getInitialPosition tileMap, Ground )
+            ( Search.getInitialPosition tileMap, WalkedGround )
+
+        ground =
+            List.map (\( pos, tile ) -> ( pos, WalkedGround )) (getWalkedGround tileMap path index)
 
         cheeses =
-            List.map (\( pos, tile ) -> ( pos, Ground )) (getEatenCheese tileMap path index)
+            List.map (\( pos, tile ) -> ( pos, WalkedGround )) (getEatenCheese tileMap path index)
 
         removeInvalidTransforms : List ( Maybe Position, Tile ) -> List ( Position, Tile )
         removeInvalidTransforms transforms =
@@ -169,11 +173,15 @@ drawTileMap sprites path tileMap index =
             )
                 |> List.filter (\( pos, _ ) -> pos /= ( -1, -1 ))
 
-        newTileMap =
-            updateMap tileMap <| List.append (removeInvalidTransforms [ mousePosition, initialPosition ]) cheeses
+        newTileMapGround =
+            updateMap tileMap <| List.append (removeInvalidTransforms [ mousePosition, initialPosition ]) ground
+
+        newTileMapCheese =
+            updateMap newTileMapGround <| List.append (removeInvalidTransforms [ mousePosition, initialPosition ]) cheeses
     in
         [ h1 [] [ text "Labirinto" ]
-        , Parser.drawMap sprites newTileMap
+        , Parser.drawMap sprites newTileMapGround
+        , Parser.drawMap sprites newTileMapCheese
         , div [] [ text <| "Número de queijos comidos: " ++ (toString <| List.length cheeses) ]
         , div [] [ text <| "Número de passos: " ++ (toString index) ]
         , ul []
@@ -205,5 +213,17 @@ getEatenCheese tileMap path index =
                 (List.take index path)
         )
         (Search.getTilesPosition tileMap Cheese)
+    )
+        |> Dict.toList
+
+
+getWalkedGround : TileMap -> Path -> Int -> List ( Position, Tile )
+getWalkedGround tileMap path index =
+    (Dict.intersect
+        (Dict.fromList <|
+            List.map (\pos -> ( pos, Ground ))
+                (List.take index path)
+        )
+        (Search.getTilesPosition tileMap Ground)
     )
         |> Dict.toList

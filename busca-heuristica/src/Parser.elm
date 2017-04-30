@@ -20,6 +20,7 @@ type Tile
     | Mouse
     | Cheese
     | Exit
+    | WalkedGround
 
 
 createMap : String -> TileMap
@@ -95,6 +96,9 @@ drawTile sprites ( x, y ) tile =
 
                 Exit ->
                     sprites.doorImg
+
+                WalkedGround ->
+                    sprites.walkedGround
     in
         div
             [ style

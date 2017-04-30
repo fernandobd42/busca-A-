@@ -7,4 +7,5 @@ type alias Sprites =
     , mouseImg : String
     , cheeseImg : String
     , doorImg : String
+    , walkedGround : String
     }
