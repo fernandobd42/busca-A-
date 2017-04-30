@@ -21,6 +21,7 @@ type Tile
     | Cheese
     | Exit
     | WalkedGround
+    | OpenDoor
 
 
 createMap : String -> TileMap
@@ -99,6 +100,9 @@ drawTile sprites ( x, y ) tile =
 
                 WalkedGround ->
                     sprites.walkedGround
+
+                OpenDoor ->
+                    sprites.openDoor
     in
         div
             [ style

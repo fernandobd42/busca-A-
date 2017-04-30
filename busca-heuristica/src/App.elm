@@ -38,7 +38,7 @@ type alias Path =
 
 
 init : Sprites -> ( Model, Cmd Msg )
-init { groundImg, wallImg, mouseImg, cheeseImg, doorImg, walkedGround } =
+init { groundImg, wallImg, mouseImg, cheeseImg, doorImg, walkedGround, openDoor } =
     ( { tileMap = Nothing
       , path = Nothing
       , index = 0
@@ -49,6 +49,7 @@ init { groundImg, wallImg, mouseImg, cheeseImg, doorImg, walkedGround } =
             , cheeseImg = cheeseImg
             , doorImg = doorImg
             , walkedGround = walkedGround
+            , openDoor = openDoor
             }
       }
     , Cmd.none
@@ -154,7 +155,10 @@ drawTileMap : Sprites -> Path -> TileMap -> Int -> List (Html msg)
 drawTileMap sprites path tileMap index =
     let
         mousePosition =
-            ( Array.fromList path |> Array.get index, Mouse )
+            if index == ((List.length path) - 1) then
+                ( Search.getFinalPosition tileMap, OpenDoor )
+            else
+                ( Array.fromList path |> Array.get index, Mouse )
 
         initialPosition =
             ( Search.getInitialPosition tileMap, WalkedGround )
