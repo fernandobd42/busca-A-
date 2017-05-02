@@ -1,4 +1,4 @@
-module Parser exposing (..)
+module TileMap exposing (TileMap, drawMap, parseMap, Position, Tile(..))
 
 import Dict exposing (Dict)
 import Html exposing (..)
@@ -24,26 +24,28 @@ type Tile
     | OpenDoor
 
 
-createMap : String -> TileMap
-createMap content =
+parseMap : String -> TileMap
+parseMap content =
     let
+        rows : List String
         rows =
             String.lines content |> List.tail |> Maybe.withDefault []
 
+        tilesChar : List (List Char)
         tilesChar =
             List.map (\row -> String.toList row) rows
     in
         List.indexedMap
             (\y row ->
-                List.indexedMap (\x tileChar -> ( ( x, y ), toTile tileChar )) row
+                List.indexedMap (\x tileChar -> ( ( x, y ), charToTile tileChar )) row
             )
             tilesChar
             |> List.concat
             |> Dict.fromList
 
 
-toTile : Char -> Tile
-toTile tileChar =
+charToTile : Char -> Tile
+charToTile tileChar =
     case tileChar of
         '#' ->
             Wall
@@ -75,7 +77,7 @@ drawMap sprites map =
             , ( "margin", "auto" )
             ]
         ]
-        (List.map (\( position, tile ) -> drawTile sprites position tile) (Dict.toList map))
+        (List.map (\( position, tile ) -> drawTile sprites position tile) <| Dict.toList map)
 
 
 drawTile : Sprites -> Position -> Tile -> Html msg

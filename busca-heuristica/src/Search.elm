@@ -3,7 +3,7 @@ module Search exposing (..)
 import Dict exposing (Dict)
 import Set exposing (Set)
 import AStar
-import Parser exposing (TileMap, Position, Tile(..))
+import TileMap exposing (TileMap, Position, Tile(..))
 
 
 getInitialPosition : TileMap -> Maybe Position
@@ -33,59 +33,35 @@ getFinalPosition tileMap =
 
 
 getPossiblePaths : TileMap -> Position -> Set Position
-getPossiblePaths tileMap currentPosition =
+getPossiblePaths tileMap ( currX, currY ) =
     let
-        ( currX, currY ) =
-            currentPosition
+        paths : List Position
+        paths =
+            [ ( currX + 1, currY )
+            , ( currX - 1, currY )
+            , ( currX, currY - 1 )
+            , ( currX, currY + 1 )
+            ]
 
-        rightPosition =
-            ( currX + 1, currY )
-
-        leftPosition =
-            ( currX - 1, currY )
-
-        upPosition =
-            ( currX, currY - 1 )
-
-        downPosition =
-            ( currX, currY + 1 )
-
-        possiblePaths =
-            Set.empty
-
+        isWalkableTile : Position -> Bool
         isWalkableTile =
             isWalkable tileMap
-
-        possiblePathsWithRight =
-            if isWalkableTile rightPosition then
-                Set.insert rightPosition possiblePaths
-            else
-                possiblePaths
-
-        possiblePathsWithLeft =
-            if isWalkableTile leftPosition then
-                Set.insert leftPosition possiblePathsWithRight
-            else
-                possiblePathsWithRight
-
-        possiblePathsWithUp =
-            if isWalkableTile upPosition then
-                Set.insert upPosition possiblePathsWithLeft
-            else
-                possiblePathsWithLeft
-
-        possiblePathsWithDown =
-            if isWalkableTile downPosition then
-                Set.insert downPosition possiblePathsWithUp
-            else
-                possiblePathsWithUp
     in
-        possiblePathsWithDown
+        List.foldr
+            (\pos possiblePaths ->
+                if isWalkableTile pos then
+                    Set.insert pos possiblePaths
+                else
+                    possiblePaths
+            )
+            Set.empty
+            paths
 
 
 isWalkable : TileMap -> Position -> Bool
 isWalkable tileMap position =
     let
+        tile : Tile
         tile =
             Dict.get position tileMap
                 |> Maybe.withDefault Wall
@@ -96,27 +72,35 @@ isWalkable tileMap position =
 findPath : TileMap -> Maybe (List Position)
 findPath tileMap =
     let
+        notFoundPosition : Position
+        notFoundPosition =
+            ( -404, -404 )
+
+        orNotFoundPosition : Maybe Position -> Position
+        orNotFoundPosition =
+            Maybe.withDefault notFoundPosition
+
+        initialPosition : Position
         initialPosition =
-            getInitialPosition tileMap
+            getInitialPosition tileMap |> orNotFoundPosition
 
+        finalPosition : Position
         finalPosition =
-            getFinalPosition tileMap
+            getFinalPosition tileMap |> orNotFoundPosition
 
-        possiblePath =
+        calcPossiblePath : Position -> Set Position
+        calcPossiblePath =
             getPossiblePaths tileMap
     in
-        if initialPosition == Nothing || finalPosition == Nothing then
+        if initialPosition == notFoundPosition || finalPosition == notFoundPosition then
             Nothing
         else
-            AStar.findPath AStar.straightLineCost
-                possiblePath
-                (Maybe.withDefault ( 0, 0 ) initialPosition)
-                (Maybe.withDefault ( 0, 0 ) finalPosition)
+            AStar.findPath AStar.straightLineCost calcPossiblePath initialPosition finalPosition
 
 
 getTilesPosition : TileMap -> Tile -> Dict Position Tile
 getTilesPosition tileMap wantedTile =
-    (List.filter (\( position, tile ) -> tile == wantedTile) <|
-        Dict.toList tileMap
-    )
+    tileMap
+        |> Dict.toList
+        |> List.filter (\( _, tile ) -> tile == wantedTile)
         |> Dict.fromList

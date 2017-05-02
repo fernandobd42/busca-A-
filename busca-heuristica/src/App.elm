@@ -6,7 +6,7 @@ import Time
 import Html exposing (..)
 import Html.Events exposing (onClick)
 import Html.Attributes exposing (class, id, type_, style)
-import Parser exposing (TileMap, createMap, Position, Tile(..))
+import TileMap exposing (TileMap, parseMap, Position, Tile(..))
 import Sprites exposing (Sprites)
 import Search
 
@@ -38,19 +38,11 @@ type alias Path =
 
 
 init : Sprites -> ( Model, Cmd Msg )
-init { groundImg, wallImg, mouseImg, cheeseImg, doorImg, walkedGround, openDoor } =
+init sprites =
     ( { tileMap = Nothing
       , path = Nothing
       , index = 0
-      , sprites =
-            { wallImg = wallImg
-            , groundImg = groundImg
-            , mouseImg = mouseImg
-            , cheeseImg = cheeseImg
-            , doorImg = doorImg
-            , walkedGround = walkedGround
-            , openDoor = openDoor
-            }
+      , sprites = sprites
       }
     , Cmd.none
     )
@@ -63,7 +55,7 @@ init { groundImg, wallImg, mouseImg, cheeseImg, doorImg, walkedGround, openDoor 
 type Msg
     = SendFile
     | FileSended String
-    | Walk Time.Time
+    | Walk
 
 
 port sendFile : () -> Cmd msg
@@ -73,26 +65,30 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         SendFile ->
-            ( model, sendFile () )
+            model ! [ sendFile () ]
 
         FileSended fileContent ->
             let
                 newTileMap =
-                    createMap fileContent
+                    parseMap fileContent
             in
-                ( { model
-                    | tileMap = Just <| newTileMap
+                { model
+                    | tileMap = Just newTileMap
                     , path = Search.findPath newTileMap
                     , index = 0
-                  }
-                , Cmd.none
-                )
+                }
+                    ! []
 
-        Walk _ ->
-            if model.path /= Nothing && model.index < (List.length <| Maybe.withDefault [] model.path) - 1 then
-                { model | index = model.index + 1 } ! []
-            else
-                model ! []
+        Walk ->
+            case model.path of
+                Just path ->
+                    if model.index < (List.length path) - 1 then
+                        { model | index = model.index + 1 } ! []
+                    else
+                        model ! []
+
+                Nothing ->
+                    model ! []
 
 
 
@@ -104,7 +100,7 @@ port fileSended : (String -> msg) -> Sub msg
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    Sub.batch [ fileSended FileSended, Time.every Time.second Walk ]
+    Sub.batch [ fileSended FileSended, Time.every Time.second <| always Walk ]
 
 
 
@@ -113,91 +109,97 @@ subscriptions model =
 
 view : Model -> Html Msg
 view model =
-    let
-        content =
-            case model.tileMap of
-                Just tileMap ->
-                    case model.path of
-                        Just mousePath ->
-                            drawTileMap model.sprites mousePath tileMap model.index
-
-                        Nothing ->
-                            [ h1 [] [ text "Problema impossível" ] ]
+    case model.tileMap of
+        Just tileMap ->
+            case model.path of
+                Just mousePath ->
+                    div [] <| drawTileMap model.sprites mousePath tileMap model.index
 
                 Nothing ->
-                    [ input [ type_ "file", id "idFilePath", class "wrapper" ] []
-                    , button [ onClick SendFile, class "wrapper" ] [ text "Enviar" ]
+                    h1 [] [ text "Problema impossível" ]
+
+        Nothing ->
+            let
+                styleWrapper =
+                    [ ( "padding", "10px" )
+                    , ( "background", "#293c4b" )
+                    , ( "color", "white" )
+                    , ( "border-radius", "100px" )
                     ]
-    in
-        div []
-            [ node "style"
-                []
-                [ text """
-
-            body {
-                background:rgba(0, 0, 0, 0.2);
-            }
-
-            .wrapper {
-                padding: 10px;
-                background: #293c4b;
-                color: white;
-                border-radius: 100px;
-                }
-         """ ]
-            , div
-                []
-                content
-            ]
+            in
+                div []
+                    [ input [ type_ "file", id "idFilePath", style styleWrapper ] []
+                    , button [ onClick SendFile, style styleWrapper ] [ text "Enviar" ]
+                    ]
 
 
 drawTileMap : Sprites -> Path -> TileMap -> Int -> List (Html msg)
 drawTileMap sprites path tileMap index =
     let
-        mousePosition =
-            if index == ((List.length path) - 1) then
-                ( Search.getFinalPosition tileMap, OpenDoor )
+        orNotFoundPosition : Maybe Position -> Position
+        orNotFoundPosition =
+            Maybe.withDefault ( -404, -404 )
+
+        isFinishedWalk : Bool
+        isFinishedWalk =
+            index == (List.length path) - 1
+
+        mouseSprite : ( Position, Tile )
+        mouseSprite =
+            if isFinishedWalk then
+                ( Search.getFinalPosition tileMap |> orNotFoundPosition, OpenDoor )
             else
-                ( Array.fromList path |> Array.get index, Mouse )
+                ( Array.fromList path |> Array.get index |> orNotFoundPosition, Mouse )
 
-        initialPosition =
-            ( Search.getInitialPosition tileMap, WalkedGround )
+        entrySprite : ( Position, Tile )
+        entrySprite =
+            ( Search.getInitialPosition tileMap |> orNotFoundPosition, WalkedGround )
 
-        ground =
-            List.map (\( pos, tile ) -> ( pos, WalkedGround )) (getWalkedGround tileMap path index)
+        walkedTiles : List Position
+        walkedTiles =
+            List.take index path
 
-        cheeses =
-            List.map (\( pos, tile ) -> ( pos, WalkedGround )) (getEatenCheese tileMap path index)
+        walkedSprites : List ( Position, Tile )
+        walkedSprites =
+            List.map (\pos -> ( pos, WalkedGround )) walkedTiles
 
-        removeInvalidTransforms : List ( Maybe Position, Tile ) -> List ( Position, Tile )
-        removeInvalidTransforms transforms =
-            (List.map
-                (\( pos, tile ) -> ( Maybe.withDefault ( -1, -1 ) pos, tile ))
-                transforms
-            )
-                |> List.filter (\( pos, _ ) -> pos /= ( -1, -1 ))
-
+        newTileMap : TileMap
         newTileMap =
-            updateMap tileMap <| List.append (removeInvalidTransforms [ mousePosition, initialPosition ]) (List.append ground cheeses)
+            updateMap tileMap <| mouseSprite :: entrySprite :: walkedSprites
     in
         [ div
             [ style [ ( "width", "80%" ), ( "height", "100vh" ), ( "overflow", "auto" ), ( "position", "absolute" ) ] ]
             [ h1
                 []
                 [ text "Labirinto" ]
-            , Parser.drawMap sprites newTileMap
+            , TileMap.drawMap sprites newTileMap
             ]
         , div
-            [ style [ ( "width", "20%" ), ( "margin-left", "80%" ), ( "height", "100vh" ), ( "overflow", "auto" ), ( "position", "absolute" ) ] ]
-            [ div [] [ text <| "Número de queijos comidos: " ++ (toString <| List.length cheeses) ]
+            [ style
+                [ ( "width", "20%" )
+                , ( "margin-left", "80%" )
+                , ( "height", "100vh" )
+                , ( "overflow", "auto" )
+                , ( "position", "absolute" )
+                ]
+            ]
+            [ div []
+                [ text <|
+                    (++)
+                        "Número de queijos comidos: "
+                        (walkedTiles
+                            |> List.filter (\pos -> Dict.get pos tileMap == Just Cheese)
+                            |> List.length
+                            |> toString
+                        )
+                ]
             , div [] [ text <| "Número de passos: " ++ (toString index) ]
             , ul []
-                (List.indexedMap
-                    (\stepNumber position ->
-                        li [] [ text <| (toString <| stepNumber + 1) ++ " - " ++ (toString position) ]
-                    )
-                 <|
-                    List.take index path
+                (walkedTiles
+                    |> List.indexedMap
+                        (\stepNumber pos ->
+                            li [] [ text <| (toString <| stepNumber + 1) ++ " - " ++ (toString pos) ]
+                        )
                 )
             ]
         ]
@@ -207,31 +209,7 @@ updateMap : TileMap -> List ( Position, Tile ) -> TileMap
 updateMap tileMap transforms =
     List.foldr
         (\( position, newTile ) currentTileMap ->
-            Dict.update position (\_ -> Just newTile) currentTileMap
+            Dict.update position (always <| Just newTile) currentTileMap
         )
         tileMap
         transforms
-
-
-getEatenCheese : TileMap -> Path -> Int -> List ( Position, Tile )
-getEatenCheese tileMap path index =
-    (Dict.intersect
-        (Dict.fromList <|
-            List.map (\pos -> ( pos, Cheese ))
-                (List.take index path)
-        )
-        (Search.getTilesPosition tileMap Cheese)
-    )
-        |> Dict.toList
-
-
-getWalkedGround : TileMap -> Path -> Int -> List ( Position, Tile )
-getWalkedGround tileMap path index =
-    (Dict.intersect
-        (Dict.fromList <|
-            List.map (\pos -> ( pos, Ground ))
-                (List.take index path)
-        )
-        (Search.getTilesPosition tileMap Ground)
-    )
-        |> Dict.toList
