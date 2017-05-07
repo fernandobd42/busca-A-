@@ -2,10 +2,12 @@ module TileMap exposing (TileMap, drawMap, parseMap, Position, Tile(..))
 
 import Dict exposing (Dict)
 import Html exposing (..)
-import Html.Attributes exposing (style, src)
+import Html.Attributes exposing (style)
 import Sprites exposing (Sprites)
 
 
+{-| Labirinto
+-}
 type alias TileMap =
     Dict Position Tile
 
@@ -24,6 +26,8 @@ type Tile
     | OpenDoor
 
 
+{-| Converte o conteúdo do arquivo de texto em mapa
+-}
 parseMap : String -> TileMap
 parseMap content =
     let
@@ -44,6 +48,8 @@ parseMap content =
             |> Dict.fromList
 
 
+{-| Converte um caracter um uma imagem
+-}
 charToTile : Char -> Tile
 charToTile tileChar =
     case tileChar of
@@ -66,6 +72,8 @@ charToTile tileChar =
             Wall
 
 
+{-| Converte um mapa em mapa
+-}
 drawMap : Sprites -> TileMap -> Html msg
 drawMap sprites map =
     div
@@ -80,6 +88,8 @@ drawMap sprites map =
         (List.map (\( position, tile ) -> drawTile sprites position tile) <| Dict.toList map)
 
 
+{-| Retorna uma div com a imagem da posição informada
+-}
 drawTile : Sprites -> Position -> Tile -> Html msg
 drawTile sprites ( x, y ) tile =
     let

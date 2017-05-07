@@ -6,6 +6,8 @@ import AStar
 import TileMap exposing (TileMap, Position, Tile(..))
 
 
+{-| Retorna a posição inicial do rato, se existir
+-}
 getInitialPosition : TileMap -> Maybe Position
 getInitialPosition tileMap =
     Dict.foldr
@@ -19,6 +21,8 @@ getInitialPosition tileMap =
         tileMap
 
 
+{-| Retorna a posição da saída do labirinto, se existir
+-}
 getFinalPosition : TileMap -> Maybe Position
 getFinalPosition tileMap =
     Dict.foldr
@@ -32,6 +36,8 @@ getFinalPosition tileMap =
         tileMap
 
 
+{-| Retorna todas as posições andáveis em torna na posição informada
+-}
 getPossiblePaths : TileMap -> Position -> Set Position
 getPossiblePaths tileMap ( currX, currY ) =
     let
@@ -58,6 +64,8 @@ getPossiblePaths tileMap ( currX, currY ) =
             paths
 
 
+{-| Returna True se a posição informada é andável, False caso contrário
+-}
 isWalkable : TileMap -> Position -> Bool
 isWalkable tileMap position =
     let
@@ -69,6 +77,8 @@ isWalkable tileMap position =
         tile /= Wall
 
 
+{-| Retorna o caminho para a saida do labirinto, caso possível
+-}
 findPath : TileMap -> Maybe (List Position)
 findPath tileMap =
     let
@@ -98,6 +108,8 @@ findPath tileMap =
             AStar.findPath AStar.straightLineCost calcPossiblePath initialPosition finalPosition
 
 
+{-| Retorna todas as posições que contém a imagem informada
+-}
 getTilesPosition : TileMap -> Tile -> Dict Position Tile
 getTilesPosition tileMap wantedTile =
     tileMap

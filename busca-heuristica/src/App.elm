@@ -11,6 +11,8 @@ import Sprites exposing (Sprites)
 import Search
 
 
+{-| É aqui que o programa começa a ser executado
+-}
 main : Program Sprites Model Msg
 main =
     Html.programWithFlags
@@ -25,6 +27,8 @@ main =
 -- MODEL
 
 
+{-| Tipo do modelo da aplicação
+-}
 type alias Model =
     { tileMap : Maybe TileMap
     , path : Maybe Path
@@ -33,10 +37,15 @@ type alias Model =
     }
 
 
+{-| Tipo do caminho percorrido pelo rato
+-}
 type alias Path =
     List Position
 
 
+{-| Cria um model com os valores iniciais.
+Recebe um objeto Sprites que contém o endereço das imagens utilizadas
+-}
 init : Sprites -> ( Model, Cmd Msg )
 init sprites =
     ( { tileMap = Nothing
@@ -52,15 +61,30 @@ init sprites =
 -- UPDATE
 
 
+{-| Mensagens das ações que podem ser executadas:
+
+  - SendFile -> Envia uma mensagem pela porta com a parte feita em
+    JavaScript que lê o conteúdo do arquivo
+
+  - FileSended -> Resposta contendo o conteúdo do arquivo em uma string
+
+  - Walk -> Executa de tempos em tempos e é aqui que é realizado a
+    movimentação do rato
+
+-}
 type Msg
     = SendFile
     | FileSended String
     | Walk
 
 
+{-| Porta para enviar mensagens para o arquivo em JavaScript
+-}
 port sendFile : () -> Cmd msg
 
 
+{-| Retorna um novo model atualizado com base na mensagem recebida
+-}
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
@@ -95,9 +119,13 @@ update msg model =
 -- SUBSCRIPTIONS
 
 
+{-| Porta para receber mensagens do arquivo em JavaScript
+-}
 port fileSended : (String -> msg) -> Sub msg
 
 
+{-| Fica escutando mensagens
+-}
 subscriptions : Model -> Sub Msg
 subscriptions model =
     Sub.batch [ fileSended FileSended, Time.every Time.second <| always Walk ]
@@ -107,6 +135,8 @@ subscriptions model =
 -- VIEW
 
 
+{-| Cria HTML que é renderizado na página
+-}
 view : Model -> Html Msg
 view model =
     case model.tileMap of
@@ -133,6 +163,8 @@ view model =
                     ]
 
 
+{-| Cria o código HTML do labirinto
+-}
 drawTileMap : Sprites -> Path -> TileMap -> Int -> List (Html msg)
 drawTileMap sprites path tileMap index =
     let
@@ -209,6 +241,8 @@ drawTileMap sprites path tileMap index =
         ]
 
 
+{-| Cria um novo labirinto atualizado as novas imagens da lista transforms
+-}
 updateMap : TileMap -> List ( Position, Tile ) -> TileMap
 updateMap tileMap transforms =
     List.foldr
