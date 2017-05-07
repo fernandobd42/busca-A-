@@ -5,7 +5,7 @@ import Dict exposing (Dict)
 import Time
 import Html exposing (..)
 import Html.Events exposing (onClick)
-import Html.Attributes exposing (class, id, type_, style)
+import Html.Attributes exposing (id, type_, style)
 import TileMap exposing (TileMap, parseMap, Position, Tile(..))
 import Sprites exposing (Sprites)
 import Search
@@ -151,13 +151,17 @@ drawTileMap sprites path tileMap index =
             else
                 ( Array.fromList path |> Array.get index |> orNotFoundPosition, Mouse )
 
+        initialPosition : Position
+        initialPosition =
+            Search.getInitialPosition tileMap |> orNotFoundPosition
+
         entrySprite : ( Position, Tile )
         entrySprite =
-            ( Search.getInitialPosition tileMap |> orNotFoundPosition, WalkedGround )
+            ( initialPosition, WalkedGround )
 
         walkedTiles : List Position
         walkedTiles =
-            List.take index path
+            initialPosition :: (List.take index path)
 
         walkedSprites : List ( Position, Tile )
         walkedSprites =
@@ -193,12 +197,12 @@ drawTileMap sprites path tileMap index =
                             |> toString
                         )
                 ]
-            , div [] [ text <| "Número de passos: " ++ (toString index) ]
+            , div [] [ text <| "Número de passos: " ++ (toString <| List.length walkedTiles) ]
             , ul []
                 (walkedTiles
                     |> List.indexedMap
-                        (\stepNumber pos ->
-                            li [] [ text <| (toString <| stepNumber + 1) ++ " - " ++ (toString pos) ]
+                        (\stepNumber ( x, y ) ->
+                            li [] [ text <| (toString <| stepNumber + 1) ++ " - (" ++ (toString y) ++ ", " ++ (toString x) ++ ")" ]
                         )
                 )
             ]
